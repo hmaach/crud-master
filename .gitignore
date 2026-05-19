@@ -2,3 +2,4 @@
 venv
 .vagrant
 .vscode
+__pycache__
