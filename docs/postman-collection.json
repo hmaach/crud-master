@@ -1,0 +1,302 @@
+{
+  "info": {
+    "name": "CRUD Master - API Collection",
+    "description": "Postman collection for the CRUD Master microservices platform. Covers Inventory API (via Gateway) and Billing API (via Gateway → RabbitMQ).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Inventory API",
+      "item": [
+        {
+          "name": "Get All Movies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{GATEWAY_URL}}/api/movies",
+              "host": ["{{GATEWAY_URL}}"],
+              "path": ["api", "movies"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(Array.isArray(json)).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Movies (Filter by Title)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{GATEWAY_URL}}/api/movies?title=Inception",
+              "host": ["{{GATEWAY_URL}}"],
+              "path": ["api", "movies"],
+              "query": [
+                {
+                  "key": "title",
+                  "value": "Inception"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Results contain the search term', function () {",
+                  "    var json = pm.response.json();",
+                  "    if (json.length > 0) {",
+                  "        pm.expect(json[0].title.toLowerCase()).to.include('inception');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Movie",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Inception\",\n  \"description\": \"A thief who steals corporate secrets through dream-sharing technology.\"\n}"
+            },
+            "url": {
+              "raw": "{{GATEWAY_URL}}/api/movies",
+              "host": ["{{GATEWAY_URL}}"],
+              "path": ["api", "movies"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Response contains message', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('created');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Movie by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{GATEWAY_URL}}/api/movies/1",
+              "host": ["{{GATEWAY_URL}}"],
+              "path": ["api", "movies", "1"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has id field', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "    pm.expect(json).to.have.property('title');",
+                  "    pm.expect(json).to.have.property('description');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Movie",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Inception (Updated)\",\n  \"description\": \"Updated description.\"\n}"
+            },
+            "url": {
+              "raw": "{{GATEWAY_URL}}/api/movies/1",
+              "host": ["{{GATEWAY_URL}}"],
+              "path": ["api", "movies", "1"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response contains updated message', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('updated');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Movie by ID",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{GATEWAY_URL}}/api/movies/1",
+              "host": ["{{GATEWAY_URL}}"],
+              "path": ["api", "movies", "1"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response contains deleted message', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('deleted');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete All Movies",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{GATEWAY_URL}}/api/movies",
+              "host": ["{{GATEWAY_URL}}"],
+              "path": ["api", "movies"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response contains all deleted message', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('all deleted');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Billing API",
+      "item": [
+        {
+          "name": "Post Billing Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"3\",\n  \"number_of_items\": 5,\n  \"total_amount\": 180.0\n}"
+            },
+            "url": {
+              "raw": "{{GATEWAY_URL}}/api/billing",
+              "host": ["{{GATEWAY_URL}}"],
+              "path": ["api", "billing"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response contains posted message', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('Message posted');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "GATEWAY_URL",
+      "value": "http://192.168.56.12:8000"
+    }
+  ]
+}
