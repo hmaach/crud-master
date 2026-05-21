@@ -4,9 +4,9 @@
 
 CRUD Master is a microservices-based movie platform composed of:
 
-- **API Gateway** (entry point)
-- **Inventory API** (CRUD + PostgreSQL)
-- **Billing API** (RabbitMQ consumer + PostgreSQL)
+- **API Gateway** (entry point — port 8000)
+- **Inventory API** (CRUD + PostgreSQL — port 8080)
+- **Billing API** (RabbitMQ consumer + PostgreSQL — no HTTP)
 
 The system demonstrates synchronous (HTTP) and asynchronous (message queue) communication.
 
@@ -17,22 +17,25 @@ The system demonstrates synchronous (HTTP) and asynchronous (message queue) comm
 ## Architecture
 
 - Gateway → Inventory (HTTP)
-- Gateway → Billing (RabbitMQ)
+- Gateway → Billing (RabbitMQ, async)
 
 ### Services (VMs)
 
-- `gateway-vm` → API Gateway
-- `inventory-vm` → Inventory API + movies_db
-- `billing-vm` → Billing API + billing_db + RabbitMQ
+| VM | Service | IP | Port |
+|---|---|---|---|
+| `inventory-vm` | Inventory API + `movies_db` | 192.168.56.10 | 8080 |
+| `billing-vm` | Billing API + `billing_db` + RabbitMQ | 192.168.56.11 | 5672 |
+| `gateway-vm` | API Gateway | 192.168.56.12 | 8000 |
 
 ---
 
 ## Tech Stack
 
-- Python (Flask)
+- Python 3 / Flask
+- SQLAlchemy (ORM)
 - PostgreSQL
 - RabbitMQ (pika)
-- PM2
+- PM2 (process manager)
 - Vagrant + VirtualBox
 
 ---
@@ -43,71 +46,150 @@ The system demonstrates synchronous (HTTP) and asynchronous (message queue) comm
 .
 ├── README.md
 ├── AI_CONTEXT.md
+├── Makefile
+├── config.yaml
 ├── .env
 ├── Vagrantfile
 ├── scripts/
-└── srcs/
-    ├── api-gateway-app/
-    ├── inventory-app/
-    └── billing-app/
+│   ├── common.sh
+│   ├── install_vagrant.sh
+│   ├── inventory.sh
+│   ├── billing.sh
+│   └── gateway.sh
+├── srcs/
+│   ├── api-gateway-app/
+│   │   ├── app/
+│   │   │   ├── __init__.py      # create_app() factory
+│   │   │   ├── config.py
+│   │   │   ├── mq.py            # RabbitMQ publisher
+│   │   │   ├── routes.py
+│   │   │   └── models.py
+│   │   ├── requirements.txt
+│   │   ├── server.py
+│   │   └── .env.example
+│   ├── billing-app/
+│   │   ├── app/
+│   │   │   ├── __init__.py      # create_app() factory (no HTTP routes)
+│   │   │   ├── config.py
+│   │   │   ├── consumer.py      # RabbitMQ consumer
+│   │   │   ├── db.py
+│   │   │   └── models.py
+│   │   ├── requirements.txt
+│   │   ├── server.py
+│   │   └── .env.example
+│   └── inventory-app/
+│       ├── app/
+│       │   ├── __init__.py      # create_app() factory
+│       │   ├── config.py
+│       │   ├── db.py
+│       │   ├── models.py
+│       │   └── routes.py
+│       ├── requirements.txt
+│       ├── server.py
+│       └── .env.example
+└── docs/
+    ├── API-Docs.md
+    ├── postman-collection.json
+    └── ...
 ```
 
 ---
 
-## Setup
+## Environment Variables
 
-### 1. Prerequisites
+All credentials are defined in `.env` (root of the project). No credentials are hardcoded.
+
+| Variable | Description | Example |
+|---|---|---|
+| `DB_USER` | PostgreSQL user for both DBs | `appuser` |
+| `DB_PASSWORD` | PostgreSQL password | `apppass` |
+| `INVENTORY_URL` | URL of the Inventory API | `http://192.168.56.10:8080` |
+| `RABBITMQ_URL` | RabbitMQ connection string | `amqp://guest:guest@192.168.56.11:5672/` |
+
+---
+
+## Quick Start
+
+### Prerequisites
 
 - Vagrant
 - VirtualBox
 
-### 2. Start infrastructure
+### 1. Start all VMs
 
 ```bash
-vagrant up
+make up
+# or: vagrant up
 ```
 
-### 3. Check status
+### 2. Check status
 
 ```bash
-vagrant status
+make status
+# or: vagrant status
 ```
 
-### 4. Access a VM
+### 3. SSH into a VM
 
 ```bash
-vagrant ssh gateway-vm
+make ssh-gateway
+make ssh-inventory
+make ssh-billing
+# or: vagrant ssh <vm-name>
 ```
+
+---
+
+## Makefile Reference
+
+| Command | Description |
+|---|---|
+| `make up` | Start all VMs (`vagrant up`) |
+| `make halt` | Stop all VMs (`vagrant halt`) |
+| `make status` | Show VM status (`vagrant status`) |
+| `make ssh-gateway` | SSH into `gateway-vm` |
+| `make ssh-inventory` | SSH into `inventory-vm` |
+| `make ssh-billing` | SSH into `billing-vm` |
+| `make destroy` | Destroy all VMs (`vagrant destroy -f`) |
+| `make clean` | Remove `venv/`, `__pycache__/`, `*.pyc` files |
+| `make install` | Install Vagrant + VirtualBox (Ubuntu/Debian) |
+| `make test` | Run local smoke tests (requires services running) |
 
 ---
 
 ## API Usage
 
-### Base URL
+### Base URL (Gateway)
 
 ```
 http://192.168.56.12:8000
 ```
 
-### Inventory
+### Inventory (via Gateway → HTTP)
 
-- `GET /api/movies`
-- `POST /api/movies`
-- `GET /api/movies/<id>`
-- `PUT /api/movies/<id>`
-- `DELETE /api/movies/<id>`
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/movies` | List all movies |
+| `GET` | `/api/movies?title=<name>` | Filter movies by title |
+| `POST` | `/api/movies` | Create a movie |
+| `GET` | `/api/movies/<id>` | Get a movie by ID |
+| `PUT` | `/api/movies/<id>` | Update a movie |
+| `DELETE` | `/api/movies/<id>` | Delete a movie |
+| `DELETE` | `/api/movies` | Delete all movies |
 
-### Billing
+### Billing (via Gateway → RabbitMQ)
 
-- `POST /api/billing`
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/billing` | Publish billing order to queue |
 
 Example:
 
 ```json
 {
   "user_id": "3",
-  "number_of_items": "5",
-  "total_amount": "180"
+  "number_of_items": 5,
+  "total_amount": 180.0
 }
 ```
 
@@ -115,45 +197,72 @@ Example:
 
 ## Testing
 
-- Import Postman collection
-- Test all endpoints
-- Validate:
-  - CRUD operations
-  - Billing queue behavior
-  - Service restart handling
+Import the Postman collection from [`docs/postman-collection.json`](docs/postman-collection.json).
+
+The collection includes one test per endpoint covering:
+
+- CRUD operations on the Inventory API
+- Billing message posting via the Gateway
+- Queue persistence (Billing down → messages queued)
+- Service restart recovery (Billing up → pending messages processed)
 
 ---
 
-## Process Management
+## Process Management (PM2)
+
+Inside any VM:
 
 ```bash
-pm2 list
-pm2 stop <service>
-pm2 restart <service>
+sudo pm2 list
+sudo pm2 stop <app_name>
+sudo pm2 restart <app_name>
 ```
+
+Service names: `inventory`, `billing`, `gateway`
 
 ---
 
 ## Key Behavior
 
-- Gateway always accepts requests
-- Inventory is synchronous
-- Billing is asynchronous via RabbitMQ
-- Messages persist if Billing is down
+- **Gateway** is always available — it never depends on Billing being up
+- **Inventory** is synchronous (HTTP)
+- **Billing** is asynchronous (RabbitMQ) — no HTTP API exposed
+- Messages persist in the queue if Billing is down; processed on restart
 
 ---
 
-## Run Services Manually (optional)
+## Run Services Manually (local development, no VMs)
 
 ```bash
-cd srcs/<service>
+# Inventory
+cd srcs/inventory-app
+cp .env.example .env
+# edit .env with local DB credentials
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python server.py
+
+# Billing
+cd srcs/billing-app
+cp .env.example .env
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python server.py
+
+# Gateway
+cd srcs/api-gateway-app
+cp .env.example .env
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
 python server.py
 ```
 
 ---
 
-## Notes
+## Design Choices
 
-- Configuration uses `.env`
-- No credentials are hardcoded
-- Each service runs independently in its own VM
+- **No hardcoded credentials** — all configuration via `.env`
+- **Billing has no HTTP API** — exclusively message-driven via RabbitMQ
+- **Durable queue + manual ACK** — no message loss on consumer restart
+- **Each service isolated in its own VM** — clear separation of concerns
+- **`app.config.from_object(Config)`** used consistently across all three services
