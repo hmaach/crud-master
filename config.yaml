@@ -1,0 +1,36 @@
+services:
+  inventory:
+    name: inventory-api
+    host: 192.168.56.10
+    port: 8080
+    database: movies_db
+    database_user: appuser
+    database_table: movies
+    endpoints:
+      - GET    /api/movies
+      - GET    /api/movies?title={title}
+      - POST   /api/movies
+      - GET    /api/movies/{id}
+      - PUT    /api/movies/{id}
+      - DELETE /api/movies/{id}
+      - DELETE /api/movies
+
+  billing:
+    name: billing-api
+    host: 192.168.56.11
+    port: 5672
+    database: billing_db
+    database_user: appuser
+    database_table: orders
+    queue: billing_queue
+    message_broker: rabbitmq
+    endpoints:
+      - POST /api/billing
+
+  gateway:
+    name: api-gateway
+    host: 192.168.56.12
+    port: 8000
+    routes:
+      - /api/movies  -> inventory (HTTP)
+      - /api/billing -> billing   (RabbitMQ)

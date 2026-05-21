@@ -1,3 +1,5 @@
+import os
+
 import pika
 import json
 from flask import Flask
@@ -8,8 +10,7 @@ from .models import Order
 
 def start_consumer():
     app = Flask(__name__)
-    app.config["SQLALCHEMY_DATABASE_URI"] = Config.DATABASE_URL
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config.from_object(Config)
 
     db.init_app(app)
 
