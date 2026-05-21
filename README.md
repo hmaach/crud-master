@@ -108,6 +108,28 @@ All credentials are defined in `.env` (root of the project). No credentials are 
 
 ---
 
+## Configuration (`config.yaml`)
+
+[`config.yaml`](config.yaml) is the single source of truth for service topology. It is parsed by [`scripts/common.sh`](scripts/common.sh:1) during VM provisioning and exported as environment variables (e.g. `INVENTORY_HOST`, `INVENTORY_PORT`, `BILLING_DATABASE`, etc.) so that provisioning scripts and apps can reference a single config file instead of hardcoding values.
+
+| Section | Key | Description |
+|---|---|---|
+| `services.inventory` | `host` | Inventory VM IP |
+| `services.inventory` | `port` | Inventory API port |
+| `services.inventory` | `database` | Inventory DB name |
+| `services.inventory` | `database_user` | DB user |
+| `services.inventory` | `database_table` | Table name |
+| `services.inventory` | `endpoints` | List of Inventory API endpoints |
+| `services.billing` | `host` | Billing VM IP |
+| `services.billing` | `port` | RabbitMQ port |
+| `services.billing` | `database` | Billing DB name |
+| `services.billing` | `queue` | RabbitMQ queue name |
+| `services.gateway` | `host` | Gateway VM IP |
+| `services.gateway` | `port` | Gateway port |
+| `services.gateway` | `routes` | Gateway routing table |
+
+---
+
 ## Quick Start
 
 ### Prerequisites

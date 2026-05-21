@@ -7,6 +7,8 @@ All client requests go through the **API Gateway**, which routes them to the app
 - `/api/movies/*` → Inventory API (HTTP)
 - `/api/billing` → Billing API (RabbitMQ, async)
 
+Service topology (IPs, ports, databases, routes) is defined in [`config.yaml`](config.yaml) and loaded by [`scripts/common.sh`](scripts/common.sh:1) during VM provisioning.
+
 > **Base URL:** `http://192.168.56.12:8000` (Gateway VM)
 
 ---
