@@ -1,5 +1,5 @@
-# Environment variables
-.env
+# Environment variables (NOT ignored — subject requires .env to be committed)
+# .env
 .env.local
 .env.*.local
 
