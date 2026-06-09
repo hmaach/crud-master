@@ -19,11 +19,13 @@ services:
     name: billing-api
     host: 192.168.56.11
     port: 5672
-    database: billing_db
+    database: orders_db
     database_user: appuser
     database_table: orders
     queue: billing_queue
     message_broker: rabbitmq
+    mq_user: mquser
+    mq_password: mqpass
     endpoints:
       - POST /api/billing
 

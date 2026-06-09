@@ -14,17 +14,22 @@ def register_routes(app):
         if path:
             url += f"/{path}"
 
-        resp = requests.request(
-            method=request.method,
-            url=url,
-            json=request.get_json(silent=True),
-            params=request.args,
-        )
-
-        return (resp.content, resp.status_code, resp.headers.items())
+        try:
+            resp = requests.request(
+                method=request.method,
+                url=url,
+                json=request.get_json(silent=True),
+                params=request.args,
+            )
+            return (resp.content, resp.status_code, resp.headers.items())
+        except requests.exceptions.ConnectionError:
+            return jsonify({"message": "Inventory service unavailable"}), 503
 
     @app.route("/api/billing", methods=["POST"])
     def billing():
-        message = json.dumps(request.json)
-        publish_message(message)
-        return jsonify({"message": "Message posted"})
+        try:
+            message = json.dumps(request.json)
+            publish_message(message)
+            return jsonify({"message": "Message posted"})
+        except Exception:
+            return jsonify({"message": "Failed to queue message"}), 503
