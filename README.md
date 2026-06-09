@@ -24,7 +24,7 @@ The system demonstrates synchronous (HTTP) and asynchronous (message queue) comm
 | VM | Service | IP | Port |
 |---|---|---|---|
 | `inventory-vm` | Inventory API + `movies_db` | 192.168.56.10 | 8080 |
-| `billing-vm` | Billing API + `billing_db` + RabbitMQ | 192.168.56.11 | 5672 |
+| `billing-vm` | Billing API + `orders_db` + RabbitMQ | 192.168.56.11 | 5672 |
 | `gateway-vm` | API Gateway | 192.168.56.12 | 8000 |
 
 ---
@@ -89,7 +89,9 @@ The system demonstrates synchronous (HTTP) and asynchronous (message queue) comm
 │       └── .env.example
 └── docs/
     ├── API-Docs.md
+    ├── openapi.yaml             # OpenAPI 3.0 spec (Gateway)
     ├── postman-collection.json
+    ├── postman-environment.json
     └── ...
 ```
 
@@ -104,7 +106,7 @@ All credentials are defined in `.env` (root of the project). No credentials are 
 | `DB_USER` | PostgreSQL user for both DBs | `appuser` |
 | `DB_PASSWORD` | PostgreSQL password | `apppass` |
 | `INVENTORY_URL` | URL of the Inventory API | `http://192.168.56.10:8080` |
-| `RABBITMQ_URL` | RabbitMQ connection string | `amqp://guest:guest@192.168.56.11:5672/` |
+| `RABBITMQ_URL` | RabbitMQ connection string | `amqp://mquser:mqpass@192.168.56.11:5672/` |
 
 ---
 
@@ -122,7 +124,9 @@ All credentials are defined in `.env` (root of the project). No credentials are 
 | `services.inventory` | `endpoints` | List of Inventory API endpoints |
 | `services.billing` | `host` | Billing VM IP |
 | `services.billing` | `port` | RabbitMQ port |
-| `services.billing` | `database` | Billing DB name |
+| `services.billing` | `database` | Billing DB name (`orders_db`) |
+| `services.billing` | `mq_user` | RabbitMQ username |
+| `services.billing` | `mq_password` | RabbitMQ password |
 | `services.billing` | `queue` | RabbitMQ queue name |
 | `services.gateway` | `host` | Gateway VM IP |
 | `services.gateway` | `port` | Gateway port |
@@ -219,7 +223,9 @@ Example:
 
 ## Testing
 
-Import the Postman collection from [`docs/postman-collection.json`](docs/postman-collection.json).
+1. Import the collection: [`docs/postman-collection.json`](docs/postman-collection.json)
+2. Import the environment: [`docs/postman-environment.json`](docs/postman-environment.json)
+3. Select the **CRUD Master - Gateway Environment** in Postman before running.
 
 The collection includes one test per endpoint covering:
 
@@ -227,6 +233,8 @@ The collection includes one test per endpoint covering:
 - Billing message posting via the Gateway
 - Queue persistence (Billing down → messages queued)
 - Service restart recovery (Billing up → pending messages processed)
+
+OpenAPI spec: [`docs/openapi.yaml`](docs/openapi.yaml)
 
 ---
 
@@ -240,7 +248,7 @@ sudo pm2 stop <app_name>
 sudo pm2 restart <app_name>
 ```
 
-Service names: `inventory`, `billing`, `gateway`
+Service names: `inventory`, `billing_app`, `gateway`
 
 ---
 

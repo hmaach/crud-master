@@ -50,7 +50,7 @@ DB_USER=appuser
 DB_PASSWORD=apppass
 
 INVENTORY_URL=http://192.168.56.10:8080
-RABBITMQ_URL=amqp://guest:guest@192.168.56.11:5672/
+RABBITMQ_URL=amqp://mquser:mqpass@192.168.56.11:5672/
 ```
 
 ---
@@ -126,7 +126,7 @@ Table: movies
 
 ### billing_db
 
-Table: orders
+Table: orders (database name: `orders_db`)
 
 - id (PK)
 - user_id

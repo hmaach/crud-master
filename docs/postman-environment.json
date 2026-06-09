@@ -1,0 +1,14 @@
+{
+  "id": "crud-master-env",
+  "name": "CRUD Master - Gateway Environment",
+  "values": [
+    {
+      "key": "GATEWAY_URL",
+      "value": "http://192.168.56.12:8000",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "schema": "https://schema.getpostman.com/json/environment/v2.1.0/environment.json"
+}
