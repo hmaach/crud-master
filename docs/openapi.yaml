@@ -1,0 +1,212 @@
+openapi: 3.0.3
+info:
+  title: CRUD Master — API Gateway
+  description: |
+    Single entry point for the CRUD Master microservices platform.
+    Routes `/api/movies/*` to the Inventory API (HTTP) and `/api/billing` to the Billing API (RabbitMQ, async).
+  version: 1.0.0
+
+servers:
+  - url: http://192.168.56.12:8000
+    description: Gateway VM
+
+tags:
+  - name: Inventory
+    description: Movie CRUD operations (proxied to Inventory API via HTTP)
+  - name: Billing
+    description: Billing order submission (published to RabbitMQ)
+
+paths:
+  /api/movies:
+    get:
+      tags: [Inventory]
+      summary: List all movies
+      parameters:
+        - name: title
+          in: query
+          required: false
+          description: Filter movies by title (partial match)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Array of movies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Movie"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    post:
+      tags: [Inventory]
+      summary: Create a movie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieInput"
+      responses:
+        "201":
+          description: Movie created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    delete:
+      tags: [Inventory]
+      summary: Delete all movies
+      responses:
+        "200":
+          description: All movies deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/movies/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      tags: [Inventory]
+      summary: Get a movie by ID
+      responses:
+        "200":
+          description: Movie found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Movie"
+        "404":
+          description: Movie not found
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    put:
+      tags: [Inventory]
+      summary: Update a movie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieInput"
+      responses:
+        "200":
+          description: Movie updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "404":
+          description: Movie not found
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    delete:
+      tags: [Inventory]
+      summary: Delete a movie by ID
+      responses:
+        "200":
+          description: Movie deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "404":
+          description: Movie not found
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/billing:
+    post:
+      tags: [Billing]
+      summary: Submit a billing order
+      description: |
+        Publishes the request body as a JSON message to `billing_queue` on RabbitMQ.
+        The Gateway returns `200` immediately regardless of whether the Billing API is running.
+        The Billing consumer processes the message and inserts it into `orders_db` asynchronously.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BillingOrder"
+      responses:
+        "200":
+          description: Message enqueued successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+components:
+  schemas:
+    Movie:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: Inception
+        description:
+          type: string
+          example: A thief who steals corporate secrets through dream-sharing technology.
+
+    MovieInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          example: Inception
+        description:
+          type: string
+          example: A thief who steals corporate secrets through dream-sharing technology.
+
+    BillingOrder:
+      type: object
+      required: [user_id, number_of_items, total_amount]
+      properties:
+        user_id:
+          type: string
+          example: "3"
+        number_of_items:
+          type: integer
+          example: 5
+        total_amount:
+          type: number
+          format: float
+          example: 180.0
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Message posted
+
+  responses:
+    ServiceUnavailable:
+      description: Upstream service unavailable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/MessageResponse"
