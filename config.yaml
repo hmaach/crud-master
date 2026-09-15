@@ -20,6 +20,7 @@ services:
     host: 192.168.56.11
     port: 5672
     database: orders_db
+    # database: billing_db
     database_user: appuser
     database_table: orders
     queue: billing_queue
