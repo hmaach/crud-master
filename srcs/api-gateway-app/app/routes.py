@@ -40,6 +40,7 @@ def register_routes(app):
 
     # BILLING GET
 
+
     @app.route("/api/billing", methods=["GET"])
     def get_billing():
 

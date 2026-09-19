@@ -13,6 +13,7 @@ Communication:
 - Gateway → Inventory: HTTP
 - Gateway → Billing: RabbitMQ (async)
 
+
 ---
 
 ## 2. ARCHITECTURE
