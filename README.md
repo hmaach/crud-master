@@ -162,6 +162,15 @@ make ssh-gateway
 make ssh-inventory
 make ssh-billing
 # or: vagrant ssh <vm-name>
+
+ssh-gateway:
+	vagrant ssh gateway-vm
+
+ssh-inventory:
+	vagrant ssh inventory-vm
+
+ssh-billing:
+	vagrant ssh billing-vm
 ```
 
 ---
