@@ -13,8 +13,6 @@ def register_routes(app):
         return jsonify([
             {
                 "id": order.id,
-                "user_id": order.user_id,
-                "number_of_items": order.number_of_items,
                 "total_amount": order.total_amount,
             }
             for order in orders
